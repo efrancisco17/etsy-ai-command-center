@@ -643,17 +643,17 @@ function Phase4Analytics() {
   }, []);
 
   const mockProducts = [
-    { name: 'Custom Family Sign', sales: 124, revenue: '$3,720' },
-    { name: 'Personalized Mug', sales: 98, revenue: '$2,940' },
-    { name: 'Pet Portrait Print', sales: 76, revenue: '$2,280' },
+    { name: 'Custom Family Sign', sales: 0, revenue: '$0' },
+    { name: 'Personalized Mug', sales: 0, revenue: '$0' },
+    { name: 'Pet Portrait Print', sales: 0, revenue: '$0' },
   ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-        <Card title="Total Revenue" value={`$${8940 + products.length * 100}`} color="#10B981" />
-        <Card title="Total Views" value={`${3200 + products.length * 50}`} color="#3B82F6" />
-        <Card title="Conversion Rate" value="8.5%" color="#F59E0B" />
+        <Card title="Total Revenue" value={`$${0}`} color="#10B981" />
+        <Card title="Total Views" value={`${0}`} color="#3B82F6" />
+        <Card title="Conversion Rate" value="0%" color="#F59E0B" />
       </div>
 
       <div className="card" style={{ background: '#1E293B', border: '1px solid #334155', padding: '1.5rem', borderRadius: '12px' }}>
