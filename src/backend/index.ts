@@ -12,12 +12,16 @@ const PORT = process.env.PORT || 3000;
 // Enhanced CORS configuration
 const corsOptions = {
   origin: function (origin: any, callback: any) {
-    // Allow all Vercel deployments, localhost, and undefined (for same-origin requests)
+    // Allow localhost, Vercel, Railway deployments, and undefined (for same-origin requests)
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:5173',
+      'https://localhost:3000',
+      'https://localhost:5173',
       'http://127.0.0.1:3000',
-      'http://127.0.0.1:5173'
+      'http://127.0.0.1:5173',
+      'https://127.0.0.1:3000',
+      'https://127.0.0.1:5173'
     ];
 
     // Check if origin is allowed
@@ -30,9 +34,13 @@ const corsOptions = {
     } else if (origin.includes('vercel.app')) {
       // Allow any Vercel deployment
       callback(null, true);
+    } else if (origin.includes('railway.app')) {
+      // Allow any Railway deployment
+      callback(null, true);
     } else {
       console.warn(`CORS: Blocked origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
+      // Return false to deny CORS without crashing (prevents 502 error)
+      callback(null, false);
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH'],
