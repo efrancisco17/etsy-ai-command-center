@@ -13,25 +13,41 @@ const PORT = process.env.PORT || 3000;
 const corsOptions = {
   origin: function (origin: any, callback: any) {
     // Allow all Vercel deployments, localhost, and undefined (for same-origin requests)
-    if (!origin ||
-        origin.match(/^https:\/\/.*\.vercel\.app$/) ||
-        origin === 'http://localhost:3000' ||
-        origin === 'http://localhost:5173') {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5173'
+    ];
+
+    // Check if origin is allowed
+    if (!origin) {
+      // Allow requests with no origin (same-origin requests)
+      callback(null, true);
+    } else if (allowedOrigins.includes(origin)) {
+      // Exact match with localhost
+      callback(null, true);
+    } else if (origin.includes('vercel.app')) {
+      // Allow any Vercel deployment
       callback(null, true);
     } else {
+      console.warn(`CORS: Blocked origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
   credentials: true,
-  maxAge: 3600
+  maxAge: 86400,
+  preflightContinue: false
 };
 
+// Apply CORS middleware BEFORE other middleware
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 
-// Handle preflight requests
+// Explicitly handle OPTIONS requests for all routes (preflight)
 app.options('*', cors(corsOptions));
 
 // Initialize Claude client (if API key exists)
@@ -480,9 +496,6 @@ Return ONLY valid JSON.`
     res.json(defaultContent);
   }
 });
-
-// OPTIONS handler for image generation endpoint
-app.options('/api/ai/generate-image', cors(corsOptions));
 
 // DALL-E API: Generate product image
 app.post('/api/ai/generate-image', async (req, res) => {
