@@ -2,7 +2,6 @@
   "name": "etsy-ai-command-center",
   "version": "1.0.0",
   "description": "AI-powered Etsy automation platform",
-  "type": "module",
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "tsx watch src/backend/index.ts",
@@ -10,7 +9,7 @@
     "build": "npm run build:backend && npm run build:frontend",
     "build:backend": "tsc --outDir dist",
     "build:frontend": "vite build",
-    "start": "node dist/index.js",
+    "start": "node dist/backend/index.js",
     "db:init": "ts-node src/backend/db/init.ts",
     "db:reset": "ts-node src/backend/db/reset.ts"
   },

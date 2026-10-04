@@ -1,8 +1,8 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import Anthropic from '@anthropic-ai/sdk';
-import OpenAI from 'openai';
+const express = require('express');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const { default: Anthropic } = require('@anthropic-ai/sdk');
+const { default: OpenAI } = require('openai');
 
 dotenv.config();
 
@@ -290,7 +290,7 @@ app.get('/api/analytics/products', (req, res) => {
 
 // Analytics: Get trends
 app.get('/api/analytics/trends', (req, res) => {
-  const dates = [];
+  const dates: string[] = [];
   for (let i = 29; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
@@ -521,7 +521,7 @@ app.post('/api/ai/generate-image', async (req, res) => {
 });
 
 // Error handling
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: any, req: any, res: any, next: any) => {
   console.error('Error:', err);
   res.status(500).json({ error: 'Internal server error' });
 });
