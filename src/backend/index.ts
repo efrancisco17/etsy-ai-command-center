@@ -9,60 +9,54 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Enhanced CORS configuration
-const corsOptions = {
-  origin: function (origin: any, callback: any) {
-    try {
-      // Allow localhost, Vercel, Railway deployments, and undefined (for same-origin requests)
-      const allowedOrigins = [
-        'http://localhost:3000',
-        'http://localhost:5173',
-        'https://localhost:3000',
-        'https://localhost:5173',
-        'http://127.0.0.1:3000',
-        'http://127.0.0.1:5173',
-        'https://127.0.0.1:3000',
-        'https://127.0.0.1:5173'
-      ];
+// Simplified CORS configuration - use built-in cors package
+// Define allowed origins explicitly for clarity and robustness
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://localhost:3000',
+  'https://localhost:5173',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
+  'https://127.0.0.1:3000',
+  'https://127.0.0.1:5173'
+];
 
-      // Check if origin is allowed
-      if (!origin) {
-        // Allow requests with no origin (same-origin requests)
-        callback(null, true);
-      } else if (allowedOrigins.includes(origin)) {
-        // Exact match with localhost
-        callback(null, true);
-      } else if (origin.includes('vercel.app')) {
-        // Allow any Vercel deployment
-        callback(null, true);
-      } else if (origin.includes('railway.app')) {
-        // Allow any Railway deployment
-        callback(null, true);
-      } else {
-        console.warn(`CORS: Blocked origin: ${origin}`);
-        // Return false to deny CORS without crashing (prevents 502 error)
-        callback(null, false);
-      }
-    } catch (error) {
-      // If something goes wrong in the callback, still allow the request to proceed
-      console.error('CORS callback error:', error);
-      callback(null, true);
+const corsOptions = {
+  // Origin validation: simple, robust logic
+  origin: function (origin: string | undefined, callback: Function) {
+    // Allow requests with no origin (same-origin, Postman, curl, etc.)
+    if (!origin) {
+      return callback(null, true);
     }
+
+    // Check exact matches (localhost and 127.0.0.1)
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Allow any Vercel or Railway deployment by pattern matching
+    if (origin.includes('vercel.app') || origin.includes('railway.app')) {
+      return callback(null, true);
+    }
+
+    // Reject everything else
+    console.log(`CORS blocked: ${origin}`);
+    callback(null, false);
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
   credentials: true,
-  maxAge: 86400,
-  preflightContinue: false
+  maxAge: 86400
 };
 
 // Apply CORS middleware BEFORE other middleware
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 
-// Explicitly handle OPTIONS requests for all routes (preflight)
-// This ensures OPTIONS requests always return 204 No Content
+// Handle OPTIONS preflight requests for all routes
+// Return 204 No Content (standard CORS preflight response)
 app.options('*', cors(corsOptions), (req, res) => {
   res.status(204).end();
 });
