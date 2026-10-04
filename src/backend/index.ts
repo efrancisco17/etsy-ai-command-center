@@ -12,35 +12,41 @@ const PORT = process.env.PORT || 3000;
 // Enhanced CORS configuration
 const corsOptions = {
   origin: function (origin: any, callback: any) {
-    // Allow localhost, Vercel, Railway deployments, and undefined (for same-origin requests)
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'https://localhost:3000',
-      'https://localhost:5173',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:5173',
-      'https://127.0.0.1:3000',
-      'https://127.0.0.1:5173'
-    ];
+    try {
+      // Allow localhost, Vercel, Railway deployments, and undefined (for same-origin requests)
+      const allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'https://localhost:3000',
+        'https://localhost:5173',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:5173',
+        'https://127.0.0.1:3000',
+        'https://127.0.0.1:5173'
+      ];
 
-    // Check if origin is allowed
-    if (!origin) {
-      // Allow requests with no origin (same-origin requests)
+      // Check if origin is allowed
+      if (!origin) {
+        // Allow requests with no origin (same-origin requests)
+        callback(null, true);
+      } else if (allowedOrigins.includes(origin)) {
+        // Exact match with localhost
+        callback(null, true);
+      } else if (origin.includes('vercel.app')) {
+        // Allow any Vercel deployment
+        callback(null, true);
+      } else if (origin.includes('railway.app')) {
+        // Allow any Railway deployment
+        callback(null, true);
+      } else {
+        console.warn(`CORS: Blocked origin: ${origin}`);
+        // Return false to deny CORS without crashing (prevents 502 error)
+        callback(null, false);
+      }
+    } catch (error) {
+      // If something goes wrong in the callback, still allow the request to proceed
+      console.error('CORS callback error:', error);
       callback(null, true);
-    } else if (allowedOrigins.includes(origin)) {
-      // Exact match with localhost
-      callback(null, true);
-    } else if (origin.includes('vercel.app')) {
-      // Allow any Vercel deployment
-      callback(null, true);
-    } else if (origin.includes('railway.app')) {
-      // Allow any Railway deployment
-      callback(null, true);
-    } else {
-      console.warn(`CORS: Blocked origin: ${origin}`);
-      // Return false to deny CORS without crashing (prevents 502 error)
-      callback(null, false);
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH'],
@@ -56,7 +62,10 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 
 // Explicitly handle OPTIONS requests for all routes (preflight)
-app.options('*', cors(corsOptions));
+// This ensures OPTIONS requests always return 204 No Content
+app.options('*', cors(corsOptions), (req, res) => {
+  res.status(204).end();
+});
 
 // Initialize Claude client (if API key exists)
 const anthropic = process.env.CLAUDE_API_KEY
@@ -549,12 +558,34 @@ app.post('/api/ai/generate-image', async (req, res) => {
 
 // Error handling
 app.use((err: any, req: any, res: any, next: any) => {
-  console.error('Error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+  try {
+    console.error('Error:', err);
+    // If response has already been sent, don't try to send again
+    if (res.headersSent) {
+      return next(err);
+    }
+    res.status(500).json({ error: 'Internal server error' });
+  } catch (error) {
+    console.error('Error handler error:', error);
+    if (!res.headersSent) {
+      res.status(500).end();
+    }
+  }
 });
 
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
+});
+
+// Unhandled rejection handler
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Uncaught exception handler
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
 });
 
 app.listen(PORT, () => {
