@@ -11,10 +11,21 @@ const PORT = process.env.PORT || 3000;
 
 // Enhanced CORS configuration
 const corsOptions = {
-  origin: ['https://etsy-ai-command-center-omega.vercel.app', 'http://localhost:5173', 'http://localhost:3000'],
-  methods: ['GET', 'POST', 'OPTIONS'],
+  origin: function (origin: any, callback: any) {
+    // Allow all Vercel deployments, localhost, and undefined (for same-origin requests)
+    if (!origin ||
+        origin.match(/^https:\/\/.*\.vercel\.app$/) ||
+        origin === 'http://localhost:3000' ||
+        origin === 'http://localhost:5173') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  credentials: true,
+  maxAge: 3600
 };
 
 app.use(cors(corsOptions));
@@ -476,11 +487,6 @@ app.options('/api/ai/generate-image', cors(corsOptions));
 // DALL-E API: Generate product image
 app.post('/api/ai/generate-image', async (req, res) => {
   const { productName, description, category } = req.body;
-
-  // Set explicit CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (!productName) {
     return res.status(400).json({ imageUrl: '', error: 'productName is required' });
