@@ -9,57 +9,36 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Simplified CORS configuration - use built-in cors package
-// Define allowed origins explicitly for clarity and robustness
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'https://localhost:3000',
-  'https://localhost:5173',
-  'http://127.0.0.1:3000',
-  'http://127.0.0.1:5173',
-  'https://127.0.0.1:3000',
-  'https://127.0.0.1:5173'
-];
-
+// ABSOLUTE SIMPLEST CORS - bulletproof configuration
 const corsOptions = {
-  // Origin validation: simple, robust logic
-  origin: function (origin: string | undefined, callback: Function) {
-    // Allow requests with no origin (same-origin, Postman, curl, etc.)
-    if (!origin) {
-      return callback(null, true);
-    }
-
-    // Check exact matches (localhost and 127.0.0.1)
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    // Allow any Vercel or Railway deployment by pattern matching
-    if (origin.includes('vercel.app') || origin.includes('railway.app')) {
-      return callback(null, true);
-    }
-
-    // Reject everything else
-    console.log(`CORS blocked: ${origin}`);
-    callback(null, false);
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  origin: [
+    'https://etsy-ai-command-center-omega.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://localhost:3000',
+    'https://localhost:5173',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173',
+    /\.vercel\.app$/,
+    /\.railway\.app$/
+  ],
   credentials: true,
-  maxAge: 86400
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
 
-// Apply CORS middleware BEFORE other middleware
+// Apply CORS middleware BEFORE any other middleware
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '50mb' }));
 
-// Handle OPTIONS preflight requests for all routes
-// Return 204 No Content (standard CORS preflight response)
-app.options('*', cors(corsOptions), (req, res) => {
-  res.status(204).end();
+// Add explicit CORS debugging middleware
+app.use((req: any, res: any, next: any) => {
+  console.log(`[CORS Debug] ${req.method} ${req.path} from origin: ${req.get('origin')}`);
+  console.log(`[CORS Debug] Headers: Content-Type=${req.get('content-type')}, Authorization=${req.get('authorization') ? 'present' : 'missing'}`);
+  next();
 });
+
+// Apply JSON parsing
+app.use(express.json({ limit: '50mb' }));
 
 // Initialize Claude client (if API key exists)
 const anthropic = process.env.CLAUDE_API_KEY
